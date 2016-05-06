@@ -7,6 +7,8 @@ import proxy
 from base64 import b64encode
 import json
 import pickle
+import threading
+import time
 import re
 import io
 import os
@@ -74,6 +76,10 @@ def get_tree_from_storage(storage):
                     ref = ref[parts[i]]
     return tree
 
+def run_browser(browser, packet):
+    time.sleep(2)
+    os.system('"%s" %s' % (browser, "http://mail.ru/"))
+    
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("infile", help="the pcap(ng) file to parse or .bin file with saved by pickle storage")
@@ -83,13 +89,14 @@ def parse_args():
                         help="only parse packages with specified source OR dest port")
     parser.add_argument("-d", "--domain", help="filter http data by request domain")
     parser.add_argument("-u", "--uri", help="filter http data by request uri pattern")
+    parser.add_argument("-n", "--packet", help="filter http data by packet number in pcap")
 
     parser.add_argument("--debug", action='store_true', help="show debug information")
     parser.add_argument("--dump-tree", action='store_true', help="create tree of directories for every url in pcap")
     parser.add_argument("--print-tree", action='store_true', help="print tree of urls in console")
-    parser.add_argument("--save-storage", type=str, metavar='filename.bin', help="pickle storage into file")
+    parser.add_argument("--save-storage", type=str, metavar='name.bin', help="pickle storage into file")
     parser.add_argument("--allow-requests", action='store_true', help="allow proxy to make requests or show only from pcap file")
-    #parser.add_argument("--packet_number", help="number of packet from which to extract url and open in browser")
+    parser.add_argument("--browser", type=str, metavar='name.exe', help="open browser with url from --packet")
     return parser.parse_args()
 
 def main():
@@ -130,7 +137,10 @@ def main():
     else:
         httpd = proxy.ThreadingHTTPServer(('127.0.0.1', 8337), proxy.ProxyRequestHandler)
         print('Proxy started on 127.0.0.1:8337')
-        httpd.serve_forever()
+        if args.browser:
+            th_args = (args.browser, args.packet)
+            threading.Thread(target=run_browser, args=th_args, daemon=False).start()
+        httpd.serve_forever()        
 
 if __name__ == '__main__':
     main()
