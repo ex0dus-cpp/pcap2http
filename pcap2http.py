@@ -1,5 +1,5 @@
-from pcapparser import config
-import parse_pcap_modified
+from pcapparsermod import config
+from pcapparsermod.parse_pcap import parse_pcap_file
 import urllib
 import argparse
 import traceback
@@ -112,7 +112,7 @@ def main():
         if args.infile.endswith('.bin'):
             storage = pickle.load(fin)
         else:
-            storage = parse_pcap_modified.parse_pcap_file(fin)
+            storage = parse_pcap_file(fin)
 
     proxy.debug = args.debug
     proxy.storage = storage
