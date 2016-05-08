@@ -83,7 +83,7 @@ def headers_dict_to_str(headers):
     return head
 
 def get_response_from_storage(storage_item, key=''):
-    head, body = storage_item
+    head, body, numbers = storage_item
 
     headers = OrderedDict()
     for line in head.split('\n'):

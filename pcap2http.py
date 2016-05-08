@@ -76,10 +76,18 @@ def get_tree_from_storage(storage):
                     ref = ref[parts[i]]
     return tree
 
-def run_browser(browser, packet):
+def run_browser(browser, url):
     time.sleep(2)
-    os.system('"%s" %s' % (browser, "http://mail.ru/"))
-    
+    os.system('"%s" %s' % (browser, url))
+
+def get_url_from_packet(packet, storage):
+    for host in storage:
+        for path in storage[host]:
+            head, body, numbers = storage[host][path]
+            #print(host + path, numbers, packet in numbers)
+            if packet in numbers:
+                return host + path
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("infile", help="the pcap(ng) file to parse or .bin file with saved by pickle storage")
@@ -89,13 +97,14 @@ def parse_args():
                         help="only parse packages with specified source OR dest port")
     parser.add_argument("-d", "--domain", help="filter http data by request domain")
     parser.add_argument("-u", "--uri", help="filter http data by request uri pattern")
-    parser.add_argument("-n", "--packet", help="filter http data by packet number in pcap")
 
     parser.add_argument("--debug", action='store_true', help="show debug information")
     parser.add_argument("--dump-tree", action='store_true', help="create tree of directories for every url in pcap")
     parser.add_argument("--print-tree", action='store_true', help="print tree of urls in console")
     parser.add_argument("--save-storage", type=str, metavar='name.bin', help="pickle storage into file")
     parser.add_argument("--allow-requests", action='store_true', help="allow proxy to make requests or show only from pcap file")
+
+    parser.add_argument("-n", "--packet", type=int, help="filter http data by packet number in pcap")
     parser.add_argument("--browser", type=str, metavar='name.exe', help="open browser with url from --packet")
     return parser.parse_args()
 
@@ -138,7 +147,8 @@ def main():
         httpd = proxy.ThreadingHTTPServer(('127.0.0.1', 8337), proxy.ProxyRequestHandler)
         print('Proxy started on 127.0.0.1:8337')
         if args.browser:
-            th_args = (args.browser, args.packet)
+            url_from_packet = get_url_from_packet(args.packet, storage)
+            th_args = (args.browser, url_from_packet)
             threading.Thread(target=run_browser, args=th_args, daemon=False).start()
         httpd.serve_forever()        
 

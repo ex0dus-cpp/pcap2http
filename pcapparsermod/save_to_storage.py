@@ -5,7 +5,6 @@ class SaveToStorage(object):
         self.host = ''
         self.uri = ''
         self.storage = storage
-        self.numbers = set()
 
     def on_http_req(self, req_header, req_body, numbers):
         """
@@ -16,17 +15,21 @@ class SaveToStorage(object):
         self.uri = req_header.uri.decode()
         
         self.storage.setdefault(self.host, dict())
-        self.storage[self.host].setdefault(self.uri, ('', b''))
-        self.numbers |= numbers
+        if self.uri in self.storage[self.host]:
+            head, body, old_numbers = self.storage[self.host][self.uri]
+            self.storage[self.host][self.uri] = head, body, (old_numbers | numbers)
+        else:
+            self.storage[self.host].setdefault(self.uri, ('', b'', set(numbers)))
+        #print(self.storage[self.host][self.uri])
 
     def on_http_resp(self, resp_header, resp_body, numbers):
         """
         :type resp_header: HttpResponseHeader
         :type resp_body: bytes
         """
-        self.storage[self.host][self.uri] = resp_header.raw_data.decode(), resp_body
-        self.numbers |= numbers
-        #print(self.host + self.uri, self.numbers)
+        head, body, old_numbers = self.storage[self.host][self.uri]
+        self.storage[self.host][self.uri] = resp_header.raw_data.decode(), resp_body, (old_numbers | numbers)
+        #print(self.host + self.uri, old_numbers | numbers)
 
     def finish(self):
         """called when this connection finished"""
