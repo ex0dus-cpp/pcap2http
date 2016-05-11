@@ -1,3 +1,4 @@
+###Pcap2http
 Parse and show HTTP sites. Python 3.3+ required.
 
 This module parses pcap(ng) files, retrieves HTTP data, and gives you the opportunity to see it in your browser or in the file system. Pcap files can be obtained via tcpdump or wireshark or other network traffic capture tools.
