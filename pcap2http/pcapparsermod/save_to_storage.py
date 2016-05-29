@@ -17,6 +17,7 @@ class SaveToStorage(object):
         self.storage.setdefault(self.host, dict())
         if self.uri in self.storage[self.host]:
             head, body, old_numbers = self.storage[self.host][self.uri]
+            if body is None: body = b''
             self.storage[self.host][self.uri] = head, body, (old_numbers | numbers)
         else:
             self.storage[self.host].setdefault(self.uri, ('', b'', set(numbers)))
@@ -28,6 +29,7 @@ class SaveToStorage(object):
         :type resp_body: bytes
         """
         head, body, old_numbers = self.storage[self.host][self.uri]
+        if resp_body is None: resp_body = b''
         self.storage[self.host][self.uri] = resp_header.raw_data.decode(), resp_body, (old_numbers | numbers)
         #print(self.host + self.uri, old_numbers | numbers)
 

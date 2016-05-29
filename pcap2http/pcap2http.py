@@ -92,11 +92,11 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("infile", help="the pcap(ng) file to parse or .bin file with saved by pickle storage")
 
-    parser.add_argument("-i", "--ip", help="only parse packages with specified source OR dest ip")
+    parser.add_argument("-i", "--ip", type=str, help="only parse packages with specified source OR dest ip")
     parser.add_argument("-p", "--port", type=int,
                         help="only parse packages with specified source OR dest port")
-    parser.add_argument("-d", "--domain", help="filter http data by request domain")
-    parser.add_argument("-u", "--uri", help="filter http data by request uri pattern")
+    parser.add_argument("-d", "--domain", type=str, help="filter http data by request domain")
+    parser.add_argument("-u", "--uri", type=str, help="filter http data by request uri pattern")
 
     parser.add_argument("--debug", action='store_true', help="show debug information")
     parser.add_argument("--dump-tree", action='store_true', help="create tree of directories for every url in pcap")
@@ -114,8 +114,9 @@ def main():
     _filter = config.get_filter()
     _filter.ip = args.ip
     _filter.port = args.port
-    _filter.domain = args.domain
-    _filter.uri_pattern = args.uri
+    enc = lambda x: x.encode() if isinstance(x, str) else x
+    _filter.domain = enc(args.domain)
+    _filter.uri_pattern = enc(args.uri)
 
     with open(args.infile, 'rb') as fin:
         if args.infile.endswith('.bin'):
@@ -127,7 +128,7 @@ def main():
     proxy.storage = storage
 
     proxy.ProxyRequestHandler.protocol_version = 'HTTP/1.1'
-    proxy.ThreadingHTTPServer.allow_requests = args.allow_requests
+    proxy.ProxyRequestHandler.allow_requests = args.allow_requests
 
     if args.save_storage:
         with open(args.save_storage, 'wb') as fout:

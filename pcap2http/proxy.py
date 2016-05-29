@@ -163,6 +163,7 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
     timeout = 5
     lock = threading.Lock()
     allow_requests = True
+    stderr_print = False
 
     def __init__(self, *args, **kwargs):
         self.tls = threading.local()
@@ -170,6 +171,13 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
 
         BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
+    def log_message(self, format, *args):
+        if self.stderr_print:
+            sys.stderr.write("%s - - [%s] %s\n" %
+                             (self.address_string(),
+                              self.log_date_time_string(),
+                              format%args))
+    
     def log_error(self, format, *args):
         # surpress "Request timed out: timeout('timed out',)"
         if isinstance(args[0], socket.timeout):
@@ -249,12 +257,12 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
 
         res = check_storage(req.headers['host'], req.path)
         if res is None:
-            if not self.allow_requests:
-                self.send_error(404)
-                return
             if debug:
                 with self.lock:
-                    print('Doing external request %s' % req.path)
+                    print('Cache miss [%s] %s' % ('external' if self.allow_requests else 'aborted', req.path))
+            if not self.allow_requests:
+                self.send_error(404)                
+                return
             req_body_modified = self.request_handler(req, req_body)
             if req_body_modified is not None:
                 req_body = req_body_modified
@@ -285,7 +293,7 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
         else:
             if debug:
                 with self.lock:
-                    print('Cache hit %s, extracting answer from storage' % req.path)
+                    print('Cache hit %s' % req.path)
 
         res_body, res_body_plain, content_encoding = get_plain_resp(res)
         res_body_modified = self.response_handler(req, req_body, res, res_body_plain)
